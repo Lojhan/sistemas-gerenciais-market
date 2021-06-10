@@ -3,7 +3,7 @@ import { ProductStockRelation } from '../entities/product_stock.entity';
 import { PSSRelation } from '../entities/prod_stock_sale.entity';
 import { Sale } from '../entities/sale.entity';
 import { User } from '../entities/user.entity';
-import events from 'events';
+import * as events from 'events';
 
 @EntityRepository(Sale)
 export class SaleRepository extends Repository<Sale> {
@@ -14,6 +14,7 @@ export class SaleRepository extends Repository<Sale> {
     quantity: number,
     atTimeValue: number,
   ) {
+    console.log(user, productUUID, stockUUID, quantity, atTimeValue);
     const sale = this.create();
     const psRelation = await ProductStockRelation.findOne({
       where: { product: productUUID, stock: stockUUID },
@@ -22,12 +23,13 @@ export class SaleRepository extends Repository<Sale> {
     ProductStockSaleRelation.psRelation = psRelation;
     ProductStockSaleRelation.quantity = quantity;
     ProductStockSaleRelation.priceAtTime = atTimeValue;
-    ProductStockSaleRelation.save();
+    // ProductStockSaleRelation.save();
+    sale.relation = [];
 
     sale.client = user;
     sale.Quantity = quantity;
     sale.relation = sale.relation.concat(ProductStockSaleRelation);
-    sale.save();
+    // sale.save();
     events.prototype.emit('initSale', sale);
 
     return { sale, ProductStockSaleRelation };
