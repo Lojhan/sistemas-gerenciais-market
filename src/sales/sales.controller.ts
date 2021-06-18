@@ -7,6 +7,7 @@ import {
   Delete,
   UseGuards,
   InternalServerErrorException,
+  Put,
 } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
@@ -22,28 +23,7 @@ export class SalesController {
   @UseGuards(AuthGuard())
   async create(@Body() body: CreateSaleDto[], @GetUser() user: User) {
     try {
-      let payload = [];
-
-      payload = body.map(
-        ({ product: { product, stock, inStockValue }, quantity }) =>
-          () =>
-            new Promise(async (resolve, reject) => {
-              try {
-                const result = await this.salesService.create(
-                  user,
-                  product.uuid,
-                  stock.uuid,
-                  quantity,
-                  inStockValue,
-                );
-                resolve(result);
-              } catch (e) {
-                reject(e);
-              }
-            }),
-      );
-
-      return await Promise.all(payload.map((func) => func()));
+      return await this.salesService.create(user, body);
     } catch (e) {
       throw new InternalServerErrorException(e);
     }
@@ -56,9 +36,19 @@ export class SalesController {
   }
 
   @Get(':uuid')
-  @UseGuards(AuthGuard())
   findOne(@Param('uuid') uuid: string) {
     return this.salesService.findOne(uuid);
+  }
+
+  @Put('confirm-payment')
+  pay(@Body() paymentTicket: any) {
+    this.salesService.conclude(paymentTicket);
+  }
+
+  @Put('send-ticket')
+  insertTicket(@Body() paymentTicket: any) {
+    console.log(paymentTicket);
+    this.salesService.insertTicket(paymentTicket);
   }
 
   @Delete(':uuid')

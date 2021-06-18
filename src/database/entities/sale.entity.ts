@@ -1,7 +1,9 @@
+import * as events from 'events';
 import {
   BaseEntity,
   Column,
   Entity,
+  JoinTable,
   ManyToOne,
   OneToMany,
   PrimaryColumn,
@@ -10,7 +12,6 @@ import {
 import { v4 as uuid } from 'uuid';
 import { PSSRelation } from './prod_stock_sale.entity';
 import { User } from './user.entity';
-import events from 'events';
 
 @Entity()
 @Unique(['uuid'])
@@ -21,26 +22,24 @@ export class Sale extends BaseEntity {
     this.purchased = false;
   }
 
-  @Column()
-  purchased: boolean;
-
   @PrimaryColumn()
   uuid: string;
-
-  @Column()
-  Quantity: number;
 
   @ManyToOne((_type) => User, (user) => user.id, { eager: true })
   client: User;
 
-  @OneToMany((_type) => PSSRelation, (relation) => relation, {
-    eager: true,
-  })
+  @OneToMany((_type) => PSSRelation, (relation) => relation)
   relation: PSSRelation[];
+
+  @Column()
+  purchased: boolean;
+
+  @Column()
+  paymentTicket: string;
 
   async purchase() {
     this.purchased = true;
     events.prototype.emit('purchase', this);
-    this.save();
+    await this.save();
   }
 }

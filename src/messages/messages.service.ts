@@ -15,7 +15,6 @@ export class MessagesService {
         this.channel = channel;
         this.channel.assertQueue('sales');
         this.channel.assertQueue('purchases');
-        console.log('teste');
       });
     });
 
@@ -34,11 +33,11 @@ export class MessagesService {
   }
 
   sendPurchaseMessage(sale: Sale) {
-    console.log(sale);
-    this.channel.sendToQueue('sales', Buffer.from(JSON.stringify(sale)));
+    console.log('aaaaaaaaaaaaa');
+    this.channel.sendToQueue('purchases', Buffer.from(JSON.stringify(sale)));
   }
 
   sendInitPurchaseMessage(sale: Sale) {
-    this.channel.sendToQueue('purchases', Buffer.from(JSON.stringify(sale)));
+    this.channel.sendToQueue('sales', Buffer.from(JSON.stringify(sale)));
   }
 }

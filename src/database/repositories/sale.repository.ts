@@ -4,34 +4,42 @@ import { PSSRelation } from '../entities/prod_stock_sale.entity';
 import { Sale } from '../entities/sale.entity';
 import { User } from '../entities/user.entity';
 import * as events from 'events';
+import { CreateSaleDto } from 'src/sales/dto/create-sale.dto';
 
 @EntityRepository(Sale)
 export class SaleRepository extends Repository<Sale> {
-  async sell(
-    user: User,
-    productUUID: string,
-    stockUUID: string,
-    quantity: number,
-    atTimeValue: number,
-  ) {
-    console.log(user, productUUID, stockUUID, quantity, atTimeValue);
-    const sale = this.create();
-    const psRelation = await ProductStockRelation.findOne({
-      where: { product: productUUID, stock: stockUUID },
-    });
-    const ProductStockSaleRelation = new PSSRelation();
-    ProductStockSaleRelation.psRelation = psRelation;
-    ProductStockSaleRelation.quantity = quantity;
-    ProductStockSaleRelation.priceAtTime = atTimeValue;
-    // ProductStockSaleRelation.save();
-    sale.relation = [];
+  async sell(user: User, sales: CreateSaleDto[]) {
+    try {
+      const sale = this.create();
+      const relation = [];
+      sale.client = user;
+      await sale.save();
 
-    sale.client = user;
-    sale.Quantity = quantity;
-    sale.relation = sale.relation.concat(ProductStockSaleRelation);
-    // sale.save();
-    events.prototype.emit('initSale', sale);
+      await Promise.all(
+        sales.map(async (s) => {
+          const psRelation = await ProductStockRelation.findOne({
+            where: { product: s.product.product, stock: s.product.stock },
+          });
+          const ProductStockSaleRelation = new PSSRelation();
+          ProductStockSaleRelation.psRelation = psRelation;
+          ProductStockSaleRelation.quantity = s.quantity;
+          ProductStockSaleRelation.priceAtTime = s.product.product.listPrice;
+          ProductStockSaleRelation.sale = sale;
 
-    return { sale, ProductStockSaleRelation };
+          relation.push(ProductStockSaleRelation);
+          await ProductStockSaleRelation.save();
+          delete ProductStockSaleRelation.sale;
+        }),
+      );
+
+      await sale.save();
+
+      sale.relation = relation;
+      events.prototype.emit('initSale', sale);
+
+      return sale;
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
